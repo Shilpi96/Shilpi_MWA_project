@@ -16,14 +16,7 @@ matplotlib.rcParams.update({'font.size': 15})
 import matplotlib.colors as colors
 import pdb
 import pylab
-#from astropy.coordinates import SkyCoord
-#from astropy.io import fits
-#import astropy.units as unit
-#from sunpy.coordinates.sun import sky_position as sun_position
-#import sunpy.coordinates.sun as sun_coord
-#import sunpy.map
-#from astropy.visualization import ImageNormalize,LogStretch
-#from mpl_toolkits.axes_grid1 import make_axes_locatable
+
 
 print('Loading the visibility & frequency data from numpy arrays ...')
 
