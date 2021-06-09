@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 from matplotlib import dates
 from matplotlib.gridspec import GridSpec
 
+
 import sunpy
 from sunpy.net import Fido
 from sunpy.net import attrs as a
