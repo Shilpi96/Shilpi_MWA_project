@@ -85,7 +85,7 @@ collist = cm(np.linspace(0, 255, 10).astype(int))
 
 
 ##############################################################################
-#     Overplot the MWA points.
+##     Overplot the MWA points.
 gauss_file = np.load(root1+'CLEAN1_1095907576/new_analysis/103-104/coords_in_arcsec.npy')
 xasec, yasec = getarcsec(gauss_file, fint=0, tint=173)
 ax1.plot(xasec, yasec, 'o', color=collist[0], transform=ax1.get_transform('world'))
