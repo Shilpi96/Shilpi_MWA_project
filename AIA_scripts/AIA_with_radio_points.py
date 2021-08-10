@@ -30,14 +30,6 @@ from matplotlib.patches import Rectangle
 from matplotlib import cm
 
 
-
-def helio(fits_file):
-	hdu = fits.open(fits_file)[0]
-	header = hdu.header
-	data = hdu.data
-	MWA_map = sunpy.map.Map(data, header)
-	return MWA_map
-
 def getarcsec(gauss_file, fint=0, tint=0):
 
 	pos = np.load(gauss_file)
