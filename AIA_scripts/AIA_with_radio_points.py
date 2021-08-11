@@ -40,6 +40,16 @@ def getarcsec(gauss_file, fint=0, tint=0):
 
 	return xasec.to('deg'), yasec.to('deg')
 
+### Plotting the points on the AIA image
+def overplot(cm, gauss_file,ax1,fint=0, tint=0,colour = 0):
+
+	cm = pylab.get_cmap('Blues')
+	collist = cm(np.linspace(0, 255, 10).astype(int))   #### Creating the colour points in a step 10 from 0 to 255 considering you have 10 points to plot
+
+	xdeg, ydeg = getarcsec(gauss_file, fint=fint, tint=tint)
+	ax1.plot(xdeg, ydeg, 'o', color=collist[colour], transform=ax1.get_transform('world'))
+	return ax1
+
 ### function to get the ratio data
 def getratio(data, f=0,i=0, vmin=0.5, vmax=1.5):
 
@@ -119,12 +129,10 @@ ax1.set_title(aia_171_map.meta['date-obs'])
 
 ##############################################################################
 #     Overplot the MWA points.
+## Colour for the Upper band of the band-split
 cm = pylab.get_cmap('Blues')
-collist = cm(np.linspace(0, 255, 10).astype(int))   #### Creating the colour points in a step 10 from 0 to 255 considering you have 10 points to plot
-
 gauss_file = np.load(root+'CLEAN1_1095907576/new_analysis/103-104/coords_in_arcsec.npy')
-xasec, yasec = getarcsec(gauss_file, fint=0, tint=173)
-ax1.plot(xasec, yasec, 'o', color=collist[0], transform=ax1.get_transform('world'))
+overplot(cm,gauss_file,ax1,fint = 0, tint =173,colour = 3)
 
 
 ####### Defining Axes for plotting two spectras
