@@ -1,4 +1,4 @@
-mport matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import numpy as np
 import glob
 import matplotlib.gridspec as gridspec
@@ -40,14 +40,28 @@ def getarcsec(gauss_file, fint=0, tint=0):
 
 	return xasec.to('deg'), yasec.to('deg')
 
-### Plotting the points on the AIA image
-def overplot(cm, gauss_file,ax1,fint=0, tint=0,colour = 0):
 
-	cm = pylab.get_cmap('Blues')
+### Function to plot the points on the AIA image
+def overplot(gauss_file,ax1,fint=0, tint=0,colour = 0,color = 'Blues',marker = 'o'):
+
+	cm = pylab.get_cmap(color)
 	collist = cm(np.linspace(0, 255, 10).astype(int))   #### Creating the colour points in a step 10 from 0 to 255 considering you have 10 points to plot
 
 	xdeg, ydeg = getarcsec(gauss_file, fint=fint, tint=tint)
-	ax1.plot(xdeg, ydeg, 'o', color=collist[colour], transform=ax1.get_transform('world'))
+	ax1.plot(xdeg, ydeg, marker, color=collist[colour], mec = 'Black',transform=ax1.get_transform('world'))
+	return ax1
+
+### Function to join the points for the same time with line
+
+def joinpoints(gauss_HF,gauss_LF,ax1,Ufint = 0, Utint = 0,Lfint = 0, Ltint = 0,colour = 0):
+	cm = pylab.get_cmap('Reds')
+	collist = cm(np.linspace(0, 255, 10).astype(int))   #### Creating the colour points in a step 10 from 0 to 255 considering you have 10 points to plot
+
+	xdeg,ydeg = getarcsec(gauss_HF, fint=Ufint, tint=Utint)
+	xdeg1,ydeg1 = getarcsec(gauss_LF, fint=Lfint, tint=Ltint)
+	xx = [xdeg,xdeg1]*u.deg
+	yy = [ydeg,ydeg1]*u.deg
+	ax1.plot(xx*u.deg, yy*u.deg,color=collist[colour],transform=ax1.get_transform("world"))
 	return ax1
 
 ### function to get the ratio data
@@ -75,97 +89,8 @@ def getratio(data, f=0,i=0, vmin=0.5, vmax=1.5):
 	iscale_img = np.interp(ratio, imscale, newscale)
 	return iscale_img
 
-######## Creating the RGB array and get the aia 171 map
-
-root = '/mnt/LOFAR-PSP/shilpi_MWA_project/'
-#aia_map = sunpy.map.Map(root+'AIA_data/aiaimages_171/aia_lev1_171a_2014_09_28t02_47_35_34z_image_lev1.fits')
-data_171 = np.load(root+'AIA_data/AIA_normailse_data/data_171.npy')
-data_193 = np.load(root+'AIA_data/AIA_normailse_data/data_193.npy')
-data_211 = np.load(root+'AIA_data/AIA_normailse_data/data_211.npy')
-
-f = 80
-i = 70
-ratio_a = getratio(data_171, f=f,i=i)
-ratio_b = getratio(data_193, f=f,i=i)
-ratio_c = getratio(data_211, f=f,i=i)
-
-rgb = np.zeros((4096, 4096, 3))
-rgb[:, :, 0] = ratio_a
-rgb[:, :, 1] = ratio_b
-rgb[:, :, 2] = ratio_c
-
-### load the time from the aia files
-time_171 = np.load(root+'AIA_data/AIA_normailse_data/Time_171.npy')
-aia_171_map = sunpy.map.Map(root+'AIA_data/aiaimages_171/aia_lev1_171a_2014_09_28t'+time_171[f])
-#pdb.set_trace()
-
-############## Defining Axes
-
-fig = plt.figure(figsize=(10, 7))
-outer = gridspec.GridSpec(2, 3, wspace=0.5, hspace=0.2)
-outer.update(left=0.1, right=0.9, top=0.95, bottom=0.05, wspace=0.3)
-inner0 = gridspec.GridSpecFromSubplotSpec(1, 1,
-        subplot_spec=outer[0:2,:1], wspace=0.1, hspace=0.3)
-
-ax1 = plt.subplot(inner0[0], projection=aia_171_map)
-
-ax1.imshow(rgb)
-aia_171_map.draw_grid(axes=ax1,annotate=False)
-##### Setting limit in both x and y axis
-xlims_world = [-350, 1225]*unit.arcsec
-ylims_world = [-2000, 200]*unit.arcsec
-world_coords = SkyCoord(Tx=xlims_world, Ty=ylims_world, frame=aia_171_map.coordinate_frame)
-pixel_coords = aia_171_map.world_to_pixel(world_coords)
-# we can then pull out the x and y values of these limits.
-xlims_pixel = pixel_coords.x.value
-ylims_pixel = pixel_coords.y.value
-ax1.set_xlim(xlims_pixel)
-ax1.set_ylim(ylims_pixel)	
-ax1.patch.set_facecolor('black')
-ax1.set_xlabel('X (arcsec)')
-ax1.set_ylabel('Y (arcsec)')
-ax1.set_title(aia_171_map.meta['date-obs'])
-
-
-##############################################################################
-#     Overplot the MWA points.
-## Colour for the Upper band of the band-split
-cm = pylab.get_cmap('Blues')
-gauss_file = np.load(root+'CLEAN1_1095907576/new_analysis/103-104/coords_in_arcsec.npy')
-overplot(cm,gauss_file,ax1,fint = 0, tint =173,colour = 3)
-
-
-####### Defining Axes for plotting two spectras
-inner1 = gridspec.GridSpecFromSubplotSpec(1, 1,
-        subplot_spec=outer[0:1,1:], wspace=0.1, hspace=0.04)           ##### from 0th row and 1st column  
-
-inner2 = gridspec.GridSpecFromSubplotSpec(6, 1,
-        subplot_spec=outer[1:2,1:], wspace=0.1, hspace=0.05)
-
-
-######## plotting the MWA dynamic spectra
-spectra = np.load('/mnt/LOFAR-PSP/shilpi_MWA_project/1095907576/dynamic_spectrum_from_interferometric_data/spectra.npy')
-  
-freq = np.load('/mnt/LOFAR-PSP/shilpi_MWA_project/1095907576/dynamic_spectrum_from_interferometric_data/freq.npy')
-print('Calculating times ...')
-start_time = datetime.datetime(2014, 9, 28, 2, 46, 6, 0)
-timestep = timedelta(seconds = 0.5)
-length  = spectra.shape[2]
-times = [(start_time + i*timestep) for i in range(length)]
-times_mpl = [dates.date2num(t) for t in times]
-       
-ylabels = [[132.5], [119.5], 
-            [108.0], [ 98.0], 
-            [ 89.0], [ 80.0]]
-
-vmin = np.log10(1000)
-vmax = np.log10(180000)
-t0 = dates.date2num(times[0])
-t1 = dates.date2num(times[-1])
-TIME = [(datetime.datetime(2014, 9, 28, 2, 47) +i*timedelta(seconds = 60)) for i in range(9)]
-	
-for i in range(6):
-	
+### Function to plot the MWA spectra
+def plot_MWAspectra(spectra,freq,TIME,ylabels,vmin,vmax,ax,t0,t1,cm,cm1,Utpoint=0, Ufpoint=0,Ltpoint=0,Lfpoint=0,Ltpoint1=0,Lfpoint1=0,i=0,colour = 0,colour1 =0, ylabel = ' '):
 	f0 = freq[i][0][0]
 	f1 = freq[i][-1][0]
 	
@@ -189,8 +114,169 @@ for i in range(6):
 	## specify the time format for x-axis
 	ax.xaxis.set_major_formatter(dates.DateFormatter('%H:%M'))
 	ax.set_xlabel('Time (UT)')
-	if i == 4 :ax.set_ylabel('Frequency (MHz)')
+	ax.set_ylabel(ylabel)
+	## Plotting the points on the plot
+	cm = pylab.get_cmap('Blues')
+	collist = cm(np.linspace(0, 255, 10).astype(int)) 
+	cm1 = pylab.get_cmap('Greens')
+	collist1 = cm1(np.linspace(0, 255, 10).astype(int)) 
+
+	if Ufpoint != 0 :ax.scatter(Utpoint,Ufpoint,facecolor=collist[colour], edgecolor='black',  linewidth = 1)
+	if Lfpoint != 0 :ax.scatter(Ltpoint,Lfpoint,facecolor=collist1[colour1], edgecolor='black', marker = 'v', linewidth = 1)
+	if Lfpoint1 != 0 :ax.scatter(Ltpoint1,Lfpoint1,facecolor=collist1[9], edgecolor='black', marker = 'v', linewidth = 1)
 	fig.add_subplot(ax)
+	
+
+### Function to overplot the points on the Learmonth
+def plot_lrmthpoints(ax2,cm,cm1,Utpoint=0, Ufpoint=0,Ltpoint=0,Lfpoint=0,Ltpoint1=0,Lfpoint1=0,colour = 0,colour1 =0):
+	cm = pylab.get_cmap('Blues')  ### Upper band
+	collist = cm(np.linspace(0, 255, 10).astype(int)) 
+
+	cm1 = pylab.get_cmap('Greens')  ### Lower band
+	collist1 = cm1(np.linspace(0, 255, 10).astype(int)) 
+
+	if Ufpoint != 0 :ax2.scatter(Utpoint,Ufpoint,facecolor=collist[colour], edgecolor='black',  linewidth = 1)
+	if Lfpoint != 0 :ax2.scatter(Ltpoint,Lfpoint,facecolor=collist1[colour1], edgecolor='black', marker = 'v', linewidth = 1)
+	if Lfpoint1 != 0 :ax2.scatter(Ltpoint1,Lfpoint1,facecolor=collist1[9], edgecolor='black', marker = 'v', linewidth = 1)
+	
+	
+######## Creating the RGB array and get the aia 171 map
+print('Creating the RGB array for a specific time')
+root = '/mnt/LOFAR-PSP/shilpi_MWA_project/'
+
+data_171 = np.load(root+'AIA_data/AIA_normailse_data/data_171.npy')
+data_193 = np.load(root+'AIA_data/AIA_normailse_data/data_193.npy')
+data_211 = np.load(root+'AIA_data/AIA_normailse_data/data_211.npy')
+
+f = 83
+i = 73
+ratio_a = getratio(data_171, f=f,i=i)
+ratio_b = getratio(data_193, f=f,i=i)
+ratio_c = getratio(data_211, f=f,i=i)
+
+rgb = np.zeros((4096, 4096, 3))
+rgb[:, :, 0] = ratio_a
+rgb[:, :, 1] = ratio_b
+rgb[:, :, 2] = ratio_c
+
+### load the time from the aia files
+print('loading the time from the aia files')
+time_171 = np.load(root+'AIA_data/AIA_normailse_data/Time_171.npy')
+aia_171_map = sunpy.map.Map(root+'AIA_data/aiaimages_171/aia_lev1_171a_2014_09_28t'+time_171[f])
+
+############## Defining Axes
+print('defining the axes')
+fig = plt.figure(figsize=(14, 7))
+outer = gridspec.GridSpec(2, 4, wspace=0.7, hspace=0.15)
+outer.update(left=0.1, right=0.9, top=0.95, bottom=0.05, wspace=0.3)
+inner0 = gridspec.GridSpecFromSubplotSpec(1, 1,
+        subplot_spec=outer[0:2,:2], wspace=0.1, hspace=0.3)
+
+##### Plot the AIA three colour ratio image
+print('plotting the AIA image')
+ax1 = plt.subplot(inner0[0], projection=aia_171_map)
+ax1.imshow(rgb)
+aia_171_map.draw_grid(axes=ax1,annotate=False)
+##### Setting limit in both x and y axis
+xlims_world = [-350, 1225]*unit.arcsec
+ylims_world = [-1400, 200]*unit.arcsec
+world_coords = SkyCoord(Tx=xlims_world, Ty=ylims_world, frame=aia_171_map.coordinate_frame)
+pixel_coords = aia_171_map.world_to_pixel(world_coords)
+# we can then pull out the x and y values of these limits.
+xlims_pixel = pixel_coords.x.value
+ylims_pixel = pixel_coords.y.value
+ax1.set_xlim(xlims_pixel)
+ax1.set_ylim(ylims_pixel)	
+ax1.patch.set_facecolor('black')
+ax1.set_xlabel('X (arcsec)')
+ax1.set_ylabel('Y (arcsec)')
+ax1.set_title(aia_171_map.meta['date-obs'])
+
+
+###########     Overplot the MWA points.
+## Colour for the Upper band of the band-split
+cm = pylab.get_cmap('Blues')
+gauss_file0 = np.load(root+'CLEAN1_1095907576/new_analysis/103-104/coords_in_arcsec.npy')
+gauss_file1 = np.load(root+'CLEAN1_1095907576/new_analysis/093-094/coords_in_arcsec.npy')
+gauss_file2 = np.load(root+'CLEAN1-1095907872/new_analysis/084-085/coords_in_arcsec.npy')
+gauss_file3 = np.load(root+'CLEAN1-1095907872/new_analysis/076-077/coords_in_arcsec.npy')
+
+overplot(gauss_file0,ax1,fint = 0, tint =185,colour = 3,color = 'Blues',marker = 'o')  ## 02:49:11
+overplot(gauss_file1,ax1,fint = 0, tint =256,colour = 5,color = 'Blues',marker = 'o')  ## 02:50:23
+overplot(gauss_file2,ax1,fint = 0, tint =28,colour = 7,color = 'Blues',marker = 'o')   ## 02:51:30
+overplot(gauss_file3,ax1,fint = 0, tint =129,colour = 8,color = 'Blues',marker = 'o')  ## 02:53:11
+
+## Plotting the points from the lower band of the band split
+cm1 = pylab.get_cmap('Purples')
+Gauss_file0 = np.load(root+'CLEAN1_1095907576/new_analysis/084-085/coords_in_arcsec.npy')
+Gauss_file1 = np.load(root+'CLEAN1_1095907576/new_analysis/076-077/coords_in_arcsec.npy')
+Gauss_file2 = np.load(root+'CLEAN1-1095907872/new_analysis/069-070/coords_in_arcsec.npy')
+
+
+overplot(Gauss_file0,ax1,fint = 0, tint =185,colour = 3,color = 'Greens',marker = 'v')  ## 02:49:11
+overplot(Gauss_file1,ax1,fint = 0, tint =257,colour = 5,color = 'Greens',marker = 'v')  ## 02:50:23
+overplot(Gauss_file2,ax1,fint = 0, tint =28,colour = 7,color = 'Greens',marker = 'v')   ## 02:51:30
+overplot(Gauss_file2,ax1,fint = 7, tint =129,colour = 9,color = 'Greens',marker = 'v')  ## 02:53:11
+
+###### Join the MWA points with the lines
+joinpoints(gauss_file0,Gauss_file0,ax1,Ufint = 0, Utint = 185,Lfint = 0, Ltint = 185,colour = 3)  ## 02:49:11
+joinpoints(gauss_file1,Gauss_file1,ax1,Ufint = 0, Utint = 256,Lfint = 0, Ltint = 257,colour = 5)  ## 02:49:11
+joinpoints(gauss_file2,Gauss_file2,ax1,Ufint = 0, Utint = 28,Lfint = 0, Ltint = 28,colour = 7)  ## 02:49:11
+joinpoints(gauss_file3,Gauss_file2,ax1,Ufint = 0, Utint = 129,Lfint = 7, Ltint = 129,colour = 8)  ## 02:49:11
+
+######################
+####### Defining Axes for plotting two spectras
+inner1 = gridspec.GridSpecFromSubplotSpec(1, 1,
+        subplot_spec=outer[0:1,2:], wspace=0.1, hspace=0.04)           ##### from 0th row and 1st column  
+
+inner2 = gridspec.GridSpecFromSubplotSpec(6, 1,
+        subplot_spec=outer[1:2,2:], wspace=0.1, hspace=0.05)
+
+
+######## plotting the MWA dynamic spectra
+spectra = np.load('/mnt/LOFAR-PSP/shilpi_MWA_project/1095907576/dynamic_spectrum_from_interferometric_data/spectra.npy')
+  
+freq = np.load('/mnt/LOFAR-PSP/shilpi_MWA_project/1095907576/dynamic_spectrum_from_interferometric_data/freq.npy')
+
+print('Calculating times ...')
+start_time = datetime.datetime(2014, 9, 28, 2, 46, 6, 0)
+timestep = timedelta(seconds = 0.5)
+length  = spectra.shape[2]
+times = [(start_time + i*timestep) for i in range(length)]
+times_mpl = [dates.date2num(t) for t in times]
+       
+ylabels = [[132.5], [119.5], 
+            [108.0], [ 98.0], 
+            [ 89.0], [ 80.0]]
+
+vmin = np.log10(1000)
+vmax = np.log10(180000)
+t0 = dates.date2num(times[0])
+t1 = dates.date2num(times[-1])
+TIME = [(datetime.datetime(2014, 9, 28, 2, 47) +i*timedelta(seconds = 60)) for i in range(9)]
+tpoint = [datetime.datetime(2014, 9, 28, 2, 49,11),datetime.datetime(2014, 9, 28, 2, 50,23),datetime.datetime(2014, 9, 28, 2, 51,30),datetime.datetime(2014, 9, 28, 2, 53,11)]
+fpoint=[133.36, 120.56,109.04,98.80,89.84,88.06]
+
+### Plot the MWA spectra
+
+ax = plt.Subplot(fig, inner2[0])
+plot_MWAspectra(spectra,freq,TIME,ylabels,vmin,vmax,ax,t0,t1,cm,cm1,Utpoint=tpoint[0], Ufpoint=fpoint[0],i = 0,colour = 3, ylabel = ' ')
+
+ax = plt.Subplot(fig, inner2[1])
+plot_MWAspectra(spectra,freq,TIME,ylabels,vmin,vmax,ax,t0,t1,cm,cm1,Utpoint=tpoint[1], Ufpoint=fpoint[1],i = 1,colour = 5, ylabel = ' ')
+
+ax = plt.Subplot(fig, inner2[2])
+plot_MWAspectra(spectra,freq,TIME,ylabels,vmin,vmax,ax,t0,t1,cm,cm1,Utpoint=tpoint[2], Ufpoint=fpoint[2],Ltpoint=tpoint[0],Lfpoint=fpoint[2],i = 2,colour= 7,colour1 =3, ylabel = 'Frequency (MHz) ')
+
+ax = plt.Subplot(fig, inner2[3])
+plot_MWAspectra(spectra,freq,TIME,ylabels,vmin,vmax,ax,t0,t1,cm,cm1,Utpoint=tpoint[3], Ufpoint=fpoint[3],Ltpoint=tpoint[1],Lfpoint=fpoint[3],i = 3,colour= 8,colour1 =5, ylabel = ' ')
+
+ax = plt.Subplot(fig, inner2[4])
+plot_MWAspectra(spectra,freq,TIME,ylabels,vmin,vmax,ax,t0,t1,cm,cm1,Ltpoint=tpoint[2],Lfpoint=fpoint[4],Ltpoint1=tpoint[3],Lfpoint1=fpoint[5],i = 4,colour1=7, ylabel = ' ')
+
+ax = plt.Subplot(fig, inner2[5])
+plot_MWAspectra(spectra,freq,TIME,ylabels,vmin,vmax,ax,t0,t1,cm,cm1,i = 5, ylabel = ' ')
+
 
 ######## Plotting the Learmonth dynamic spectra
 
@@ -221,6 +307,8 @@ ax2.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
 #ax2.xaxis.tick_top()
 ax2.set_xlim(t0plot, t1plot)
 ax2.set_ylim(freqs[415], freqs[629])
+ax2.set_xlabel('Time (UT)')
+ax2.set_ylabel('Frequency (MHz)')
 
 ##### Drawing transparent rectangles to show the MWA channels on the Learmonth spectra
 freq = [131.2,118.4,106.88,97.0,87.68,78.72]
@@ -231,6 +319,17 @@ for i in range(len(freq)):
 ##### Adding verticle dotted lines on the plot
 for j in range(len(TIME)):
 	ax.axvline(x= TIME[j], color='black', linestyle='dotted', linewidth = 0.5)
+
+##### Overplot points on the learmonth spectra
+plot_lrmthpoints(ax2,cm,cm1,Utpoint=tpoint[0], Ufpoint=fpoint[0],colour = 3)
+
+plot_lrmthpoints(ax2,cm,cm1,Utpoint=tpoint[1], Ufpoint=fpoint[1],colour = 5)
+
+plot_lrmthpoints(ax2,cm,cm1,Utpoint=tpoint[2], Ufpoint=fpoint[2],Ltpoint=tpoint[0],Lfpoint=fpoint[2],colour= 7,colour1 =3)
+
+plot_lrmthpoints(ax2,cm,cm1,Utpoint=tpoint[3], Ufpoint=fpoint[3],Ltpoint=tpoint[1],Lfpoint=fpoint[3],colour= 8,colour1 =5,)
+
+plot_lrmthpoints(ax2,cm,cm1,Ltpoint=tpoint[2],Lfpoint=fpoint[4],Ltpoint1=tpoint[3],Lfpoint1=fpoint[5],colour1=7)
 
 plt.show()
 
