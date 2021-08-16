@@ -1,4 +1,4 @@
-saimport matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import numpy as np
 import glob
 import matplotlib.gridspec as gridspec
@@ -91,7 +91,7 @@ def getratio(data, f=0,i=0, vmin=0.5, vmax=1.5):
 	return iscale_img
 
 ### Function to plot the MWA spectra
-def plot_MWAspectra(spectra,freq,ax,ylabels = ylabels,TIME = TIME,vmin = vmin,vmax = vmax,t0 = t0,t1 = t1,cm,cm1,Utpoint=0, Ufpoint=0,Ltpoint=0,Lfpoint=0,Ltpoint1=0,Lfpoint1=0,i=0,colour = 0,colour1 =0, ylabel = ' '):
+def plot_MWAspectra(spectra,freq,ax,ylabels,TIME,vmin,vmax,t0,t1 ,cm,cm1,Utpoint=0, Ufpoint=0,Ltpoint=0,Lfpoint=0,Ltpoint1=0,Lfpoint1=0,i=0,colour = 0,colour1 =0, ylabel = ' '):
 	f0 = freq[i][0][0]
 	f1 = freq[i][-1][0]
 	
@@ -220,7 +220,7 @@ overplot(Gauss_file2,ax1,fint = 7, tint =129,colour = 9,color = 'Greens',marker 
 ###### Join the MWA points with the lines
 joinpoints(gauss_file0,Gauss_file0,ax1,Ufint = 0, Utint = 185,Lfint = 0, Ltint = 185,colour = 3)  ## 02:49:11
 joinpoints(gauss_file1,Gauss_file1,ax1,Ufint = 0, Utint = 256,Lfint = 0, Ltint = 257,colour = 5)  ## 02:50:23
-joinpoints(gauss_file2,Gauss_file2,ax1,Ufint = 0, Utint = 28,Lfint = 0, Ltint = 28,colour = 7)  ## 02:51:30
+joinpoints(gauss_file2,Gauss_file2,ax1,Ufint = 0, Utint = 28,Lfint = 0, Ltint = 32,colour = 7)  ## 02:51:30
 joinpoints(gauss_file3,Gauss_file2,ax1,Ufint = 0, Utint = 129,Lfint = 7, Ltint = 129,colour = 8)  ## 02:53:11
 
 ######################
@@ -259,22 +259,22 @@ fpoint=[133.36, 120.56,109.04,98.80,89.84,88.06]
 ### Plot the MWA spectra
 
 ax = plt.Subplot(fig, inner2[0])
-plot_MWAspectra(spectra,freq,ax,cm,cm1,Utpoint=tpoint[0], Ufpoint=fpoint[0],i = 0,colour = 3)
+plot_MWAspectra(spectra,freq,ax,ylabels,TIME,vmin,vmax,t0,t1 ,cm,cm1,Utpoint=tpoint[0], Ufpoint=fpoint[0],i = 0,colour = 3)
 
 ax = plt.Subplot(fig, inner2[1])
-plot_MWAspectra(spectra,freq,ax,cm,cm1,Utpoint=tpoint[1], Ufpoint=fpoint[1],i = 1,colour = 5)
+plot_MWAspectra(spectra,freq,ax,ylabels,TIME,vmin,vmax,t0,t1 ,cm,cm1,Utpoint=tpoint[1], Ufpoint=fpoint[1],i = 1,colour = 5)
 
 ax = plt.Subplot(fig, inner2[2])
-plot_MWAspectra(spectra,freq,ax,cm,cm1,Utpoint=tpoint[2], Ufpoint=fpoint[2],Ltpoint=tpoint[0],Lfpoint=fpoint[2],i = 2,colour= 7,colour1 =3, ylabel = 'Frequency (MHz) ')
+plot_MWAspectra(spectra,freq,ax,ylabels,TIME,vmin,vmax,t0,t1 ,cm,cm1,Utpoint=tpoint[2], Ufpoint=fpoint[2],Ltpoint=tpoint[0],Lfpoint=fpoint[2],i = 2,colour= 7,colour1 =3, ylabel = 'Frequency (MHz) ')
 
 ax = plt.Subplot(fig, inner2[3])
-plot_MWAspectra(spectra,freq,ax,cm,cm1,Utpoint=tpoint[3], Ufpoint=fpoint[3],Ltpoint=tpoint[1],Lfpoint=fpoint[3],i = 3,colour= 8,colour1 =5)
+plot_MWAspectra(spectra,freq,ax,ylabels,TIME,vmin,vmax,t0,t1 ,cm,cm1,Utpoint=tpoint[3], Ufpoint=fpoint[3],Ltpoint=tpoint[1],Lfpoint=fpoint[3],i = 3,colour= 8,colour1 =5)
 
 ax = plt.Subplot(fig, inner2[4])
-plot_MWAspectra(spectra,freq,ax,cm,cm1,Ltpoint=tpoint[2],Lfpoint=fpoint[4],Ltpoint1=tpoint[3],Lfpoint1=fpoint[5],i = 4,colour1=7)
+plot_MWAspectra(spectra,freq,ax,ylabels,TIME,vmin,vmax,t0,t1 ,cm,cm1,Ltpoint=tpoint[2],Lfpoint=fpoint[4],Ltpoint1=tpoint[3],Lfpoint1=fpoint[5],i = 4,colour1=7)
 
 ax = plt.Subplot(fig, inner2[5])
-plot_MWAspectra(spectra,freq,ax,cm,cm1,i = 5)
+plot_MWAspectra(spectra,freq,ax,ylabels,TIME,vmin,vmax,t0,t1 ,cm,cm1,i = 5)
 
 
 ######## Plotting the Learmonth dynamic spectra
