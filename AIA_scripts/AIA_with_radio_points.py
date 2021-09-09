@@ -1,3 +1,6 @@
+#### This code creates a plot of AIA ratio images with band-splitting sources and Learmonth (fitted curve on both bands) and MWA with overplotted sources.
+
+
 import matplotlib.pyplot as plt
 import numpy as np
 import glob
@@ -26,6 +29,7 @@ import matplotlib.dates as mdates
 import matplotlib.gridspec as gridspec
 import os
 from scipy.io import readsav
+from scipy.optimize import curve_fit
 from matplotlib.patches import Rectangle
 from matplotlib import cm
 import matplotlib
@@ -49,7 +53,7 @@ def overplot(gauss_file,ax1,fint=0, tint=0,colour = 0,color = 'Blues',marker = '
 	collist = cm(np.linspace(0, 255, 10).astype(int))   #### Creating the colour points in a step 10 from 0 to 255 considering you have 10 points to plot
 
 	xdeg, ydeg = getarcsec(gauss_file, fint=fint, tint=tint)
-	ax1.plot(xdeg, ydeg, marker, color=collist[colour], mec = 'Black',transform=ax1.get_transform('world'))
+	ax1.plot(xdeg, ydeg, marker, color=collist[colour], mec = 'Black',transform=ax1.get_transform('world'), markersize=10)
 	return ax1
 
 ### Function to join the points for the same time with line
@@ -120,9 +124,9 @@ def plot_MWAspectra(spectra,freq,ax,ylabels,TIME,vmin,vmax,t0,t1 ,cm,cm1,Utpoint
 	cm1 = pylab.get_cmap('Greens')
 	collist1 = cm1(np.linspace(0, 255, 10).astype(int)) 
 
-	if Ufpoint != 0 :ax.scatter(Utpoint,Ufpoint,facecolor=collist[colour], edgecolor='black',  linewidth = 1)
-	if Lfpoint != 0 :ax.scatter(Ltpoint,Lfpoint,facecolor=collist1[colour1], edgecolor='black', marker = 'v', linewidth = 1)
-	if Lfpoint1 != 0 :ax.scatter(Ltpoint1,Lfpoint1,facecolor=collist1[9], edgecolor='black', marker = 'v', linewidth = 1)
+	if Ufpoint != 0 :ax.scatter(Utpoint,Ufpoint,facecolor=collist[colour], edgecolor='black',  linewidth = 1,s = 55)
+	if Lfpoint != 0 :ax.scatter(Ltpoint,Lfpoint,facecolor=collist1[colour1], edgecolor='black', marker = 'v', linewidth = 1,s = 55)
+	if Lfpoint1 != 0 :ax.scatter(Ltpoint1,Lfpoint1,facecolor=collist1[9], edgecolor='black', marker = 'v', linewidth = 1,s = 55)
 	fig.add_subplot(ax)
 	
 
@@ -134,9 +138,9 @@ def plot_lrmthpoints(ax2,cm,cm1,Utpoint=0, Ufpoint=0,Ltpoint=0,Lfpoint=0,Ltpoint
 	cm1 = pylab.get_cmap('Greens')  ### Lower band
 	collist1 = cm1(np.linspace(0, 255, 10).astype(int)) 
 
-	if Ufpoint != 0 :ax2.scatter(Utpoint,Ufpoint,facecolor=collist[colour], edgecolor='black',  linewidth = 1)
-	if Lfpoint != 0 :ax2.scatter(Ltpoint,Lfpoint,facecolor=collist1[colour1], edgecolor='black', marker = 'v', linewidth = 1)
-	if Lfpoint1 != 0 :ax2.scatter(Ltpoint1,Lfpoint1,facecolor=collist1[9], edgecolor='black', marker = 'v', linewidth = 1)
+	if Ufpoint != 0 :ax2.scatter(Utpoint,Ufpoint,facecolor=collist[colour], edgecolor='black',  linewidth = 1,s = 55)
+	if Lfpoint != 0 :ax2.scatter(Ltpoint,Lfpoint,facecolor=collist1[colour1], edgecolor='black', marker = 'v', linewidth = 1,s = 55)
+	if Lfpoint1 != 0 :ax2.scatter(Ltpoint1,Lfpoint1,facecolor=collist1[9], edgecolor='black', marker = 'v', linewidth = 1,s = 55)
 	
 	
 ######## Creating the RGB array and get the aia 171 map
@@ -190,6 +194,13 @@ ax1.patch.set_facecolor('black')
 ax1.set_xlabel('X (arcsec)')
 ax1.set_ylabel('Y (arcsec)')
 ax1.set_title(aia_171_map.meta['date-obs'])
+##### Draw a line to do point and click
+''' 
+xlims_world = [354, 524]*unit.arcsec
+ylims_world = [-348, -707]*unit.arcsec
+world_coords = SkyCoord(Tx=xlims_world, Ty=ylims_world, frame=aia_171_map.coordinate_frame)
+pixel_coords = aia_171_map.world_to_pixel(world_coords)
+ax1.plot(pixel_coords[0], pixel_coords[1],color="blue")'''
 
 
 ###########     Overplot the MWA points.
@@ -314,6 +325,56 @@ freq = [131.2,118.4,106.88,97.0,87.68,78.72]
 for i in range(len(freq)):
 	rect = Rectangle((start, freq[i]), width, 2.52, facecolor='white', alpha = 0.3, edgecolor='black', linewidth = 1)
 	ax2.add_patch(rect) 
+##### Fit the curve on the bandsplitting on the learmonth
+## Points for fitting the curve
+x_coords = np.load(root +'AIA_data/npy_files/x_coord_learmonth.npy')
+y_coords = np.load(root +'AIA_data/npy_files/y_coord_learmonth.npy')
+
+## Points for fitting the curve on HFB
+x_coords_HFB = np.load(root+'AIA_data/npy_files/x_coord_learmonth_HFB.npy')
+y_coords_HFB = np.load(root+'AIA_data/npy_files/y_coord_learmonth_HFB.npy')
+
+## Chosen points for HFB
+x_point_HFB = np.load(root+'AIA_data/npy_files/x_coord_HFB.npy')
+y_point_HFB = np.load(root+'AIA_data/npy_files/y_coord_HFB.npy')
+
+## Chosen Points for LFB
+x_point_LFB = np.load(root+'AIA_data/npy_files/x_coord_LFB.npy')
+y_point_LFB = np.load(root+'AIA_data/npy_files/y_coord_LFB.npy')
+
+## LFB
+X = x_coords
+x = X -X[0] 
+y = y_coords
+
+## HFB
+X1 = x_coords_HFB
+x1 = X1-X1[0] 
+y1 = y_coords_HFB
+
+#pdb.set_trace()
+##### define the true objective function
+def func(x, a, b, c, d):
+    return a * x + b * x**2 + c * x**3 + d #* x**4 + e
+#### LFB
+# curve fit
+popt, _ = curve_fit(func, x, y)
+# summarize the parameter values
+a, b, c , d= popt
+print('y = %.5f * x + %.5f * x^2 + %.5f * x^3 + %.5f'% (a, b, c, d))  # * x^4 + %.5f' % (a, b, c, d, e))
+y_new = func(x,a,b,c,d)
+#Plot the polynomial fit
+ax2.plot(X, y_new,color = 'black' )
+
+#### HFB
+# curve fit
+popt, _ = curve_fit(func, x1, y1)
+# summarize the parameter values
+a, b, c , d= popt
+print('y = %.5f * x + %.5f * x^2 + %.5f * x^3 + %.5f'% (a, b, c, d)) 
+y_new = func(x1,a,b,c,d)
+#Plot the polynomial fit
+ax2.plot(X1, y_new,color = 'black' )
 
 ##### Adding verticle dotted lines on the plot
 for j in range(len(TIME)):
